@@ -1,0 +1,114 @@
+= awx-ee-ansiblecollections Build Guide
+Antonio C. <ac (at) trikorasolutions (dot) com>
+:icons: font
+:revdate: {docdate}
+:stem: latexmath
+:toc: left
+:toclevels: 3
+:toc-title: Table of Contents
+:description: Instructions to build this project.
+
+== Create Execution Environment
+
+Files required for building an Execution Enviromnent.
+
+* `execution-environment.yml`: Execution Environment definition
+* `bindep.txt`: System dependencies (more information on bindep link:https://docs.opendev.org/opendev/bindep/latest/readme.html[here])
+* `requirements.txt`: Python requiremends
+* `requirements.yml`: Ansible requirements (collections)
+
+Check the contents under the link:ee/[ee] folder.
+
+=== GLPI
+
+[NOTE]
+====
+`podman` can be replaced by `docker` as `container-runtime`. Check the `ansible-builder build --help`.
+====
+
+[CAUTION]
+====
+Replace `xxxxxxxx` with the quay user/organization.
+====
+
+[source,bash]
+----
+AWX_EE_OPENSTACK_VERSION=0.0.1
+----
+
+[source,bash]
+----
+ansible-builder build --tag awx-ee-ansiblecollections:$(cat version.txt)
+----
+
+[source,]
+----
+Running command:
+  podman build -f context/Containerfile -t awx-ee-ansiblecollections:0.0.1 context
+Complete! The build context can be found at: /z/dev/enterprise/oss/awx-ee-ansiblecollections/contex
+----
+
+[source,bash]
+----
+podman image ls | grep ee
+----
+
+[source,]
+----
+REPOSITORY                                   TAG                  IMAGE ID      CREATED         SIZE
+localhost/awx-ee-ansiblecollections          0.0.1                xxxxxxxxxxxx  5 minutes ago   1.1 GB
+----
+
+=== Push the image to Quay.io
+
+Login into [quay.io](https://quay.io/).
+
+[source,bash]
+----
+buildah login quay.io
+----
+
+[source,bash]
+----
+Username: xxxxxxx
+Password:
+Login Succeeded! 
+----
+
+Push the image tag to [quay.io](https://quay.io/).
+
+[source,bash]
+----
+buildah images
+----
+
+[source,bash]
+----
+REPOSITORY                       TAG    IMAGE ID       CREATED          SIZE
+localhost/awx-ee-ansiblecollections   0.0.1  0dfd4e306b8a   4 minutes ago    1.1 GB
+----
+
+[source,bash]
+----
+buildah push localhost/awx-ee-ansiblecollections:$(cat version.txt) docker://quay.io/trikorasolns/awx-ee-ansiblecollections:$(cat version.txt)
+----
+
+If the `push` succeeds the output should end with:
+
+[source,bash]
+----
+Writing manifest to image destination
+Storing signatures
+----
+
+And the container will be available at https://quay.io/repository/trikorasolns/awx-ee-ansiblecollections.
+
+[NOTE]
+====
+To also tag the image as the `latest` image to:
+====
+
+[source,bash]
+----
+buildah push localhost/awx-ee-ansiblecollections:$(cat version.txt) docker://quay.io/trikorasolns/awx-ee-ansiblecollections:latest
+----
